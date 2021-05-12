@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            border: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 3rem;
+            margin-top: 2rem;
+            margin-left: 2rem;
+        }
+
+        .formGroup {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2rem;
+            width: 80%;
+        }
+
+        .formGroup label {
+            font-weight: 500;
+            color: #333333;
+            margin-bottom: 1rem;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        input {
+            height: 3rem;
+            border-radius: 2rem;
+            background-color: white;
+            border: solid 1px #DDDDDD;
+            position: relative;
+
+            transition: all 0.2s;
+            outline: none;
+            color: #333333;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 1.2rem;
+            padding: 0 1.5rem;
+        }
+
+        button {
+            background-color: #071D49;
+            border: solid 1px #071D49;
+            height: 4rem;
+            font-size: 1rem;
+            font-weight: 200;
+            text-transform: uppercase;
+            padding: 0 2rem;
+            cursor: pointer;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2rem;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            color: #071D49;
+            background-color: white;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
+
+        .cta {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="form">
+            <div class="formGroup">
+                <input type="number" id="angle" class="" placeholder="Angle" name="Angle" />
+            </div>
+            <div class="formGroup">
+                <input type="number" id="velocity" class="" placeholder="Initial Velocity" name="velocity" />
+            </div>
+            <div class="cta">
+                <button id="btn">Start</button>
+                <button id="reset">reset</button>
+            </div>
+        </div>
+        <div class="canv">
+            <canvas id="canvas" width="800" height="800"
+                style="border: 2px solid black; border-radius: 20px; "></canvas>
+        </div>
+
+    </div>
+
+
+    <script>
+        const cvs = document.getElementById("canvas");
+        const ctx = cvs.getContext("2d");
+        const btn = document.getElementById("btn");
+        const resetBtn = document.getElementById("reset");
+
+        const canvasDimensions = {
+            width: cvs.width,
+            height: cvs.height
+        }
+
+
+        const shapeData = {
+            gravitationalAcceleration: -9.8,
+            initSpeed: 0,
+            initAngle: 0,
+        }
+
+        const resultData = {
+            max_x: 0,
+            max_y: 0,
+            range: 0,
+            totalTime: 0
+        }
+
+        const drawBall = (x, y) => {
+            ctx.beginPath();
+
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.fillStyle = "#2e3548";
+            ctx.fill();
+
+            ctx.strokeStyle = "#2e3548";
+            ctx.stroke();
+
+            ctx.closePath();
+        }
+
+
+
+        // Define functions for position and velocity 
+        //resource for equations : https://courses.lumenlearning.com/boundless-physics/chapter/projectile-motion/
+
+        let position_x = (time) => shapeData.initSpeed * Math.cos(shapeData.initAngle) * time;
+        let position_y = (time) => (0.5 * shapeData.gravitationalAcceleration * time * time) + (shapeData.initSpeed * Math.sin(shapeData.initAngle) * time);
+        let velocity_x = () => shapeData.initSpeed * Math.cos(shapeData.initAngle);
+        let velocity_y = (time) => (shapeData.gravitationalAcceleration * time) + (shapeData.initSpeed * Math.sin(shapeData.initAngle));
+
+
+        const draw = (time, animate) => {
+
+            resetBtn.disabled = true;
+
+            // Calculate maximum height
+            timeAtMaxHeight = -1 * shapeData.initSpeed * Math.sin(shapeData.initAngle) / shapeData.gravitationalAcceleration;
+            resultData.max_x = position_x(timeAtMaxHeight);
+            resultData.max_y = position_y(timeAtMaxHeight);
+
+            // Calculate range
+            resultData.range = -1 * shapeData.initSpeed * shapeData.initSpeed * Math.sin(2 * shapeData.initAngle) / shapeData.gravitationalAcceleration;
+
+            resultData.totalTime = -2 * shapeData.initSpeed * Math.sin(shapeData.initAngle) / shapeData.gravitationalAcceleration;
+
+
+            ctx.clearRect(0, 0, canvasDimensions.width, canvasDimensions.height);
+
+            ctx.strokeStyle = "#000000";
+
+
+            ctx.beginPath();
+            ctx.moveTo(0, canvasDimensions.height);
+            ctx.setLineDash([5, 15]);
+            ctx.quadraticCurveTo(resultData.max_x,
+                canvasDimensions.height - 2 * resultData.max_y,
+                resultData.range,
+                canvasDimensions.height);
+            ctx.stroke();
+            var v_x = velocity_x();
+            var v_y = velocity_y(time);
+            var speed = Math.sqrt(v_x * v_x + v_y * v_y);
+            //  var angle = Math.atan(v_y / v_x) * 180 / Math.PI;
+
+            // Draw the current position
+            x = position_x(time);
+            y = canvasDimensions.height - (position_y(time));
+
+
+            // draw text
+            ctx.fillStyle = "#FFF";
+            ctx.font = "25px Germania One";
+            ctx.fillText("displacement : " + resultData.range, 10, 30);
+
+            drawBall(x, y);
+
+            time += speed / 1000;
+
+            if ((time <= resultData.totalTime + speed * 0.001) && animate)
+                setTimeout(function () { draw(time, true); }, speed);
+            else {
+                resetBtn.disabled = false;
+            }
+
+        }
+
+
+        btn.addEventListener("click", function () {
+            shapeData.initAngle = +document.getElementById("angle").value * Math.PI / 180;
+            shapeData.initSpeed = +document.getElementById("velocity").value;
+            draw(0, true);
+            btn.disabled = true;
+
+        })
+
+        resetBtn.addEventListener("click", function () {
+            ctx.clearRect(0, 0, canvasDimensions.width, canvasDimensions.height);
+            document.getElementById("angle").value = '';
+            document.getElementById("velocity").value = '';
+            btn.disabled = false;
+
+        })
+    </script>
+
+</body>
+
+</html>
